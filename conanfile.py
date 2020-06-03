@@ -14,7 +14,7 @@ class MingwInstallerConan(ConanFile):
     url = "http://github.com/conan-community/conan-mingw-installer"
 
     settings = "os", "arch"
-    options = {"version": None,
+    options = {"version": [None],
                "threads": ["posix", "win32"],
                "exception": ["dwarf2", "sjlj", "seh"]}
     default_options = {"threads": "win32", "exception": "seh"}
