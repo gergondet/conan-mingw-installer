@@ -13,11 +13,11 @@ class MingwInstallerConan(ConanFile):
     license = "http://www.mingw.org/license"
     url = "http://github.com/conan-community/conan-mingw-installer"
 
-    settings = {"os_build": ["Windows"],
-                "arch_build" : ["x86", "x86_64"],
-                "compiler": {"gcc": {"version": None,
-                                     "threads": ["posix", "win32"],
-                                     "exception": ["dwarf2", "sjlj", "seh"]}}}
+    settings = "os", "arch"
+    options = {"version": None,
+               "threads": ["posix", "win32"],
+               "exception": ["dwarf2", "sjlj", "seh"]}
+    default_options = {"threads": "win32", "exception": "seh"}
 
     description = 'MinGW, a contraction of "Minimalist GNU for Windows", ' \
                   'is a minimalist development environment for native Microsoft' \
@@ -28,10 +28,10 @@ class MingwInstallerConan(ConanFile):
     def build(self):
         self.output.info("Updating MinGW List ... please wait.")
 
-        installer = get_best_installer(str(self.settings.arch_build),
-                                       str(self.settings.compiler.threads),
-                                       str(self.settings.compiler.exception),
-                                       str(self.settings.compiler.version))
+        installer = get_best_installer(str(self.settings.arch),
+                                       str(self.options.threads),
+                                       str(self.options.exception),
+                                       str(self.options.version))
 
         self.output.info("Downloading: %s" % installer.url)
         tools.download(installer.url, "file.7z")
@@ -44,15 +44,13 @@ class MingwInstallerConan(ConanFile):
         shutil.rmtree('mingw32', True)
         shutil.rmtree('mingw64', True)
 
-    def package_id(self):
-        self.info.include_build_settings()
-
     def package_info(self):
         self.env_info.path.append(os.path.join(self.package_folder, "bin"))
         self.env_info.MINGW_HOME = str(self.package_folder)
-        self.env_info.CONAN_CMAKE_GENERATOR = "MinGW Makefiles"
-        self.env_info.CXX = os.path.join(self.package_folder, "bin", "g++.exe").replace("\\", "/")
-        self.env_info.CC = os.path.join(self.package_folder, "bin", "gcc.exe").replace("\\", "/")
+
+    def deploy(self):
+        self.copy("*.exe")
+        self.copy("*.dll")
 
 
 class Installer(namedtuple("Installer", "version arch threads exception revision url")):
