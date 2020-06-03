@@ -20,4 +20,3 @@ class MinGWTestConan(ConanFile):
         self.run("main")
         output = StringIO.StringIO()
         self.run("gcc --version", output=output)
-        assert(str(self.settings.compiler.version) in str(output.getvalue()))
