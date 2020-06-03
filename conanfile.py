@@ -14,10 +14,10 @@ class MingwInstallerConan(ConanFile):
     url = "http://github.com/conan-community/conan-mingw-installer"
 
     settings = "os", "arch"
-    options = {"version": [None],
+    options = {"version": "ANY",
                "threads": ["posix", "win32"],
                "exception": ["dwarf2", "sjlj", "seh"]}
-    default_options = {"threads": "win32", "exception": "seh"}
+    default_options = {"version": None, "threads": "win32", "exception": "seh"}
 
     description = 'MinGW, a contraction of "Minimalist GNU for Windows", ' \
                   'is a minimalist development environment for native Microsoft' \
@@ -81,24 +81,29 @@ def get_best_installer(arch, threads, exception, version):
         for line in f.readlines():
             installers.append(Installer(line))
 
-    version = Version(version)
     def params_match(i):
         return arch == i.arch and threads == i.threads and exception == i.exception
+
+    installers = list(filter(params_match, installers))
 
     def better_choice(i):
         return not best_match or i.version > best_match.version or (i.version == best_match.version and i.revision > best_match.revision)
 
     best_match = None
-    for i in installers:
-        if len(version.as_list) == 1:
-            if i.version.major() == version.major() and params_match(i) and better_choice(i):
-                best_match = i
-        elif len(version.as_list) == 2:
-            if i.version.major() == version.major() and i.version.minor() == version.minor() and params_match(i) and better_choice(i):
-                best_match = i
-        elif len(version.as_list) == 3:
-            if i.version == version and params_match(i) and better_choice(i):
-                best_match = i
+    if version == "None":
+        best_match = max(installers, key = lambda i: i.version)
+    else:
+        version = Version(version)
+        for i in installers:
+            if len(version.as_list) == 1:
+                if i.version.major() == version.major() and params_match(i) and better_choice(i):
+                    best_match = i
+            elif len(version.as_list) == 2:
+                if i.version.major() == version.major() and i.version.minor() == version.minor() and params_match(i) and better_choice(i):
+                    best_match = i
+            elif len(version.as_list) == 3:
+                if i.version == version and params_match(i) and better_choice(i):
+                    best_match = i
 
     if not best_match:
         raise Exception("There is no suitable MinGW release for the requested features %s %s %s %s" % (arch, threads, exception, version))
